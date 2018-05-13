@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="../css/mui.min.css" />
+		<link rel="stylesheet" href="../css/common.css" type="text/css" charset="utf-8"/>
+		<style type="text/css">
+			.mui-content {padding-top:15px;}
+footer {
+	width: 100%;
+	text-align: center;
+	color: #c6c6c6;
+	font-size: 12px;
+}
+		</style>
+	</head>
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">chat (聊天窗口)</h1>
+		</header>
+		<div class="mui-content">
+		
+		</div>
+		<footer>
+		</footer>
+		<script src="../js/mui.min.js"></script>
+	<script type="text/javascript" charset="utf-8">
+(function($, doc) {
+				var MIN_SOUND_TIME = 800;
+				$.init({
+					gestureConfig: {
+						tap: true, //默认为true
+						doubletap: true, //默认为false
+						longtap: true, //默认为false
+						swipe: true, //默认为true
+						drag: true, //默认为true
+						hold: true, //默认为false，不监听
+						release: true //默认为false，不监听
+					}
+				});
+				template.config('escape', false);
+				var ev=document.getElementById('version');
+				ev&&(ev.innerText=plus.runtime.version);
+}(mui, document));
+		</script>
+</body>
+</html>

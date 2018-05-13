@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Information</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<!--标准mui.css-->
+		<link rel="stylesheet" href="../css/mui.min.css">
+		<link rel="stylesheet" type="text/css" href="../css/common.css"/>
+		<style>
+			.mui-table-view-cell {min-height: 50px;}
+			.mui-table-view-cell:after {right:15px;}
+			.mui-input-row select.mui-btn {
+				float:none;width:100%;height:auto;font-size:18px;font-weight: normal;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title" id="view-title">系统配置</h1>
+		</header>
+		<div class="mui-content">
+			<br />
+			<form class="mui-input-group">
+				<div class="mui-input-row">
+					<label>Name：</label>
+					<input type="text" id="name">
+				</div>
+				<div class="mui-input-row">
+					<label>User ID：</label>
+					<input type="text" id="userid">
+				</div>
+				<div class="mui-input-row">
+					<label>Email：</label>
+					<input type="text" id="email">
+				</div>
+				<div class="mui-input-row">
+					<label>Region：</label>
+					<input type="text" id="region">
+				</div>
+				<div class="mui-input-row">
+					<label>Phone：</label>
+					<input type="text" id="phone">
+				</div>
+				<div class="mui-input-row">
+					<label>Gender：</label>
+					<input type="text" id="gender">
+				</div>
+				<div class="mui-input-row">
+					<label>Address：</label>
+					<input type="text" id="address">
+				</div>
+				<div class="mui-input-row">
+					<label>Description：</label>
+					<input type="text" id="description">
+				</div>
+				<div class="mui-input-row">
+					<label>Connected：</label>
+					<input type="text" id="connected">
+				</div>
+			</form>
+			<br />
+			&nbsp;&nbsp;Update
+			<form class="mui-input-group">
+				<div class="mui-input-row">
+					<select id="update-key" class="mui-btn mui-btn-block">
+						<option value="name">Name</option>
+						<option value="email">Email</option>
+						<option value="phone">Phone</option>
+						<option value="gender">Gender</option>
+						<option value="region">Region</option>
+						<option value="description">Description</option>
+					</select>
+				</div>
+				<div class="mui-input-row">
+					<input type="text" id="update-value" class="mui-input-clear">
+				</div>
+				<div class="mui-button-row">
+					<button type="button" class="mui-btn mui-btn-primary" id="btnUpdate">确认</button>
+				</div>
+				
+				<div id="debug"></div>
+			</form>
+			<br />
+		</div>
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/app.js"></script>
+		<script>
+			mui.init({
+				swipeBack:true //启用右滑关闭功能
+			});
+			var bug = document.getElementById("debug");
+			var viewTitle = document.getElementById("view-title");
+			var state = app.getState();
+			mui.plusReady(function(){
+				viewTitle.innerText = state.account
+				var nameBox = document.getElementById("name");
+				var useridBox = document.getElementById("userid");
+				var emailBox = document.getElementById("email");
+				var regionBox = document.getElementById("region");
+				var phoneBox = document.getElementById("phone");
+				var genderBox = document.getElementById("gender");
+				var addressBox = document.getElementById("address");
+				var descriptionBox = document.getElementById("description");
+				var connectedBox = document.getElementById("connected");
+				var updateKeyBox = document.getElementById("update-key");
+				var updateValueBox = document.getElementById("update-value");
+				var btnUpdate = document.getElementById("btnUpdate");
+				btnUpdate.addEventListener('tap', function(event) {
+					const k = updateKeyBox.value;
+					const v = updateValueBox.value;
+					if(!k || !v) return false;
+					mainview && mui.fire( mainview , 'sck_send', {type: app.type.me, data: {method: 'set', param : {
+		            	key : k,
+		            	value : v
+		        	}}})
+				}, false);
+				
+				var mainview = plus.webview.getLaunchWebview();
+				var currentview = plus.webview.currentWebview();
+				window.addEventListener(app.type.me_set, function(event){
+					if(event && event.detail && event.detail.code > 0 && event.detail.msg === 'ok' && event.detail.data) {
+						const d = event.detail.data;
+						nameBox.value = d.name;
+						useridBox.value = d.userId;
+						descriptionBox && (descriptionBox.value = d.description);
+						genderBox.value = d.gender;
+						phoneBox.value = d.phone;
+						emailBox.value = d.email;
+						regionBox.value = d.region;
+					}
+				}, false)
+				
+				window.addEventListener(app.type.me_get, function(event){
+					if(event && event.detail && event.detail.code > 0 && event.detail.msg === 'ok' && event.detail.data) {
+						const d = event.detail.data;
+						nameBox.value = d.name;
+						useridBox.value = d.userId;
+						descriptionBox && (descriptionBox.value = d.description);
+						genderBox.value = d.gender;
+						phoneBox.value = d.phone;
+						emailBox.value = d.email;
+						regionBox.value = d.region;
+					}
+				}, false)
+				
+				window.addEventListener(app.type.me_address, function(event){
+					if(event && event.detail && event.detail.code > 0 && event.detail.msg === 'ok' && event.detail.data) {
+						addressBox.value = event.detail.data;
+					}
+				}, false)
+				
+				window.addEventListener(app.type.me_online, function(event){
+					bug.innerText = JSON.stringify(event.detail)
+					if(event && event.detail && event.detail.code > 0 && event.detail.msg === 'ok' && event.detail.data) {
+						connectedBox.value = event.detail.data.online;
+					}
+				}, false)
+				mainview && mui.fire( mainview , 'add_scribe' , {type: app.type.me_set, data: {id: currentview.id}} )
+				mainview && mui.fire( mainview , 'add_scribe' , {type: app.type.me_get, data: {id: currentview.id}} )
+				mainview && mui.fire( mainview , 'add_scribe' , {type: app.type.me_address, data: {id: currentview.id}} )
+				mainview && mui.fire( mainview , 'add_scribe' , {type: app.type.me_online, data: {id: currentview.id}} )
+				mainview && mui.fire( mainview , 'sck_send', {type: app.type.me, data: {method: 'online'}})
+				mainview && mui.fire( mainview , 'sck_send', {type: app.type.me, data: {method: 'get'}})
+				mainview && mui.fire( mainview , 'sck_send', {type: app.type.me, data: {method: 'address'}})
+				
+		
+			})
+		</script>
+	</body>
+</html>

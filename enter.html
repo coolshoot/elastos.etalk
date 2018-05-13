@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html class="ui-page-login">
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<link href="css/style.css" rel="stylesheet" />
+		<style>
+			.area {
+				margin: 20px auto 0px auto;
+			}
+			
+			.mui-input-group {
+				margin-top: 10px;
+			}
+			
+			.mui-input-group:first-child {
+				margin-top: 20px;
+			}
+			
+			.mui-input-group label {
+				width: 22%;
+			}
+			
+			.mui-input-row label~input,
+			.mui-input-row label~select,
+			.mui-input-row label~textarea {
+				width: 75%;
+			}
+			
+			.mui-checkbox input[type=checkbox],
+			.mui-radio input[type=radio] {
+				top: 6px;
+			}
+			
+			.mui-content-padded {
+				margin-top: 25px;
+			}
+			
+			.mui-btn {
+				padding: 10px;
+			}
+			
+		</style>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<h1 class="mui-title">登录</h1>
+		</header>
+		<div class="mui-content">
+			<form id='login-form' class="mui-input-group">
+				<div class="mui-input-row">
+					<label>Account：</label>
+					<input id='account' type="text" class="mui-input-clear mui-input">
+				</div>
+			</form>
+			<form class="mui-input-group">
+				<ul class="mui-table-view mui-table-view-chevron">
+					<li class="mui-table-view-cell">
+						自动登录
+						<div id="autoLogin" class="mui-switch">
+							<div class="mui-switch-handle"></div>
+						</div>
+					</li>
+				</ul>
+			</form>
+			<div class="mui-content-padded">
+				<button id='login' class="mui-btn mui-btn-block mui-btn-primary">登录</button>
+			</div>
+			<div id="debug"></div>
+		</div>
+		<script src="js/mui.min.js"></script>
+		<script src="js/mui.enterfocus.js"></script>
+		<script src="js/app.js"></script>
+		<script>
+			(function($, doc) {
+				$.init({
+					statusBarBackground: '#f7f7f7'
+				});
+				var scribe = {};
+				var bug = doc.getElementById('debug');
+				function send(type, data, callback){
+			    	if(app.socket.readyState < 1){
+				      setTimeout(()=>{
+				        send(type, data, callback);
+				      }, 200);
+				    } else {
+				      app.socket.send(JSON.stringify({
+				        type,
+				        data
+				      }));
+				    }
+			    };
+			    function handlerMessage(res){
+			    	if(res && res.type && (scribe[res.type] || scribe[app.type.all])) {
+			    		// bug.innerText += res.type + '  '
+			    		const param = scribe[res.type];
+			    		param && param.forEach((m)=>{
+			    			if(m && m.id) {
+			    				const v = plus.webview.getWebviewById(m.id);
+			    				v && $.fire(v, m.eventname || res.type, res)
+			    			}
+			    		})
+			    		const allparam = scribe[app.type.all];
+			    		allparam && allparam.forEach((m)=>{
+			    			if(m && m.id) {
+			    				const v = plus.webview.getWebviewById(m.id);
+			    				v && $.fire(v, m.eventname || res.type, res)
+			    			}
+			    		})
+			    	}
+			    };
+				$.plusReady(function() {
+					plus.screen.lockOrientation("portrait-primary");
+					var settings = app.getSettings();
+					var state = app.getState();
+//					var main = plus.webview.currentWebview();
+//					state.mainviewid = main.id;
+//					app.setState(state);
+					var mainPage = plus.webview.getWebviewById("index");
+					var main_loaded_flag = false;
+					if(!mainPage){
+						mainPage = $.preload({
+							"id": 'index',
+							"url": 'index.html'
+						});
+					}else{
+						main_loaded_flag = true;
+					}
+					mainPage.addEventListener("loaded",function () {
+						main_loaded_flag = true;
+					});
+					var toMain = function() {
+						//使用定时器的原因：
+						//可能执行太快，main页面loaded事件尚未触发就执行自定义事件，此时必然会失败
+						if(!app.socket) {
+							app.socket = new WebSocket('ws://elastos.ieeac.cn/socket.io?ela='+ encodeURIComponent(state.account));  
+				        
+					        app.socket.addEventListener('message', (event)=>{
+						      try{
+						        const data = JSON.parse(event.data);
+						        handlerMessage(data);
+						      }catch(e){
+						        console.error(e);
+						        console.error('receive invalid message : '+event.data);
+						      }
+						    });
+						    send('me', {method: 'get'})
+						    send('me', {method: 'address'})
+						    send('me', {method: 'online'})
+						    
+						    setInterval(function(){
+						    	send('me', {method: 'online'})	
+						    }, 30000)
+						}
+						var id = setInterval(function () {
+							if(main_loaded_flag){
+								clearInterval(id);
+								$.fire(mainPage, 'show', null);
+								mainPage.show("pop-in");
+							}
+						},20);
+					};
+					// bug.innerText = settings.autoLogin + ' - ' + state.account
+					//检查 "登录状态/锁屏状态" 开始
+					if (settings.autoLogin && state.account) {
+						toMain();
+					} else {
+						app.setState(null);
+					}
+					// close splash
+					setTimeout(function() {
+						//关闭 splash
+						plus.navigator.closeSplashscreen();
+					}, 600);
+					//检查 "登录状态/锁屏状态" 结束
+					var loginButton = doc.getElementById('login');
+					var accountBox = doc.getElementById('account');
+					var autoLoginButton = doc.getElementById("autoLogin");
+					loginButton.addEventListener('tap', function(event) {
+						var loginInfo = {
+							account: accountBox.value
+						};
+						app.login_ela(loginInfo, function(err) {
+							if (err) {
+								plus.nativeUI.toast(err);
+								return;
+							}
+							toMain();
+						});
+					});
+					autoLoginButton.classList[settings.autoLogin ? 'add' : 'remove']('mui-active')
+					autoLoginButton.addEventListener('toggle', function(event) {
+						setTimeout(function() {
+							var isActive = event.detail.isActive;
+							settings.autoLogin = isActive;
+							app.setSettings(settings);
+						}, 50);
+					}, false);
+					$.enterfocus('#login-form input', function() {
+						$.trigger(loginButton, 'tap');
+					});
+					
+					var backButtonPress = 0;
+					$.back = function(event) {
+						backButtonPress++;
+						if (backButtonPress > 1) {
+							plus.runtime.quit();
+						} else {
+							plus.nativeUI.toast('再按一次退出应用');
+						}
+						setTimeout(function() {
+							backButtonPress = 0;
+						}, 1000);
+						return false;
+					};
+				});
+				
+				window.addEventListener('add_scribe', function(event) {
+					if(event && event.detail && event.detail.type && event.detail.data) {
+						scribe[event.detail.type] = scribe[event.detail.type] || []
+						var _match = false;
+						scribe[event.detail.type].forEach(m=>{
+							if (m.id === event.detail.data.id) {
+								_match = true;
+								return false;
+							}
+						})
+						!_match && (scribe[event.detail.type].push(event.detail.data));
+					}
+				}, false);
+				window.addEventListener('sck_send', function(event) {
+					if(event && event.detail && event.detail.type) {
+						// if(event.detail.type === app.type.friend) alert(222333)
+						send(event.detail.type, event.detail.data)
+					}
+				}, false);
+			}(mui, document));
+		</script>
+	</body>
+
+</html>
